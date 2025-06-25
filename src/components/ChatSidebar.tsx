@@ -46,11 +46,12 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       
       {/* Sidebar */}
       <div
-        className={`fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-gray-950 border-r border-gray-800 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:sticky inset-y-0 left-0 z-50 w-80 bg-gray-950 border-r border-gray-800 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        } ${!isOpen ? 'lg:w-0 lg:border-r-0' : ''}`}
+        style={{ top: 0, height: '100vh' }}
       >
-        <div className="flex flex-col h-full">
+        <div className={`flex flex-col h-full ${!isOpen ? 'lg:hidden' : ''}`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
             <h2 className="text-lg font-semibold text-white">Chat History</h2>
@@ -58,7 +59,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-gray-400 hover:text-white hover:bg-gray-800 lg:hidden"
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
             >
               <X size={20} />
             </Button>

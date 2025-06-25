@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Plus, Menu, MessageSquare } from 'lucide-react';
+import { Send, Plus, Menu, MessageSquare, Paperclip, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ChatMessage from './ChatMessage';
@@ -14,7 +13,9 @@ const ChatInterface = () => {
   const [chatHistory, setChatHistory] = useState<ChatData[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadChatHistory();
@@ -62,12 +63,27 @@ const ChatInterface = () => {
     return `${randomResponse} ${message.split('').reverse().join('')}. This is a simulated response for demonstration purposes.`;
   };
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setAttachedFiles(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() && attachedFiles.length === 0) return;
+
+    let messageContent = inputValue;
+    if (attachedFiles.length > 0) {
+      const fileNames = attachedFiles.map(file => file.name).join(', ');
+      messageContent += attachedFiles.length > 0 ? `\n\nAttached files: ${fileNames}` : '';
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content: messageContent,
       sender: 'user',
       timestamp: new Date(),
     };
@@ -75,6 +91,7 @@ const ChatInterface = () => {
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInputValue('');
+    setAttachedFiles([]);
     setIsLoading(true);
 
     try {
@@ -164,7 +181,7 @@ const ChatInterface = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
             className="text-gray-400 hover:text-white hover:bg-gray-800"
           >
             <Menu size={20} />
@@ -211,9 +228,43 @@ const ChatInterface = () => {
           )}
         </div>
 
+        {/* File Attachments */}
+        {attachedFiles.length > 0 && (
+          <div className="px-4 py-2 border-t border-gray-700">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex flex-wrap gap-2">
+                {attachedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-lg"
+                  >
+                    <span className="text-sm text-gray-300">{file.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeFile(index)}
+                      className="h-4 w-4 text-gray-400 hover:text-white"
+                    >
+                      <X size={12} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Input */}
         <div className="p-4 border-t border-gray-700">
           <div className="max-w-3xl mx-auto flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Paperclip size={18} />
+            </Button>
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -224,12 +275,20 @@ const ChatInterface = () => {
             />
             <Button
               onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isLoading}
+              disabled={(!inputValue.trim() && attachedFiles.length === 0) || isLoading}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600"
             >
               <Send size={18} />
             </Button>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+            accept="*/*"
+          />
         </div>
       </div>
     </div>
